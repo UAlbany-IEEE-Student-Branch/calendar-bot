@@ -5,6 +5,8 @@ from discord.ext import commands
 from discord.ext.commands.bot import Bot
 from dotenv import load_dotenv
 import os
+from dateutil.relativedelta import relativedelta
+import json
 
 
 load_dotenv('.env')
@@ -45,17 +47,30 @@ def main():
     service = build('calendar', 'v3', credentials=creds)
 
     # Call the Calendar API
-    now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-    print('Getting the upcoming 10 events')
-    events_result = service.events().list(calendarId='primary', timeMin=now, maxResults=10, singleEvents=True, orderBy='startTime').execute()
-    
+    today = datetime.datetime.today()
+    week_from_now = today + relativedelta(days=6, hours=23, minutes=59, seconds=59)
+    tmin = week_from_now.isoformat('T') + 'Z'
+    tmax = today.isoformat('T') + 'Z'
+
+    json_file_name = tmin[:tmin.index('T')]
+
+    events_result = service.events().list(
+        calendarId='primary',
+        timeMin=tmin,
+        timeMax=tmax,
+        singleEvents=True,
+        orderBy='startTime').execute()
+
     events = events_result.get('items', [])
 
-    if not events:
-        print('No upcoming events found.')
-    for event in events:
-        start = event['start'].get('dateTime', event['start'].get('date'))
-        print(start, event['summary'])
+    os.chdir("./json_weekly_files")
+    with open(f"{json_file_name}.json", 'w', encoding='utf-8') as f:
+        event_list = {}
+        for i, event in enumerate(events):
+            event_entry = {"event_name": event['summary'], "start_time": event['start']['dateTime'],
+                           "end_time": event['end']['dateTime'], "location": "void"}
+            event_list[f"Event No.{i+1}"] = event_entry
+        json.dump(event_list, fp=f, indent=4)
 
 
 if __name__ == '__main__':
