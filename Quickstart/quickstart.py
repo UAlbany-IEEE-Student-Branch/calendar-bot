@@ -1,77 +1,52 @@
-from __future__ import print_function
-
-import discord 
-from discord.ext import commands
+import discord
+from discord.ext import commands, tasks
 from discord.ext.commands.bot import Bot
 from dotenv import load_dotenv
-import os
-from dateutil.relativedelta import relativedelta
-import json
-
-
-load_dotenv('.env')
-TOKEN = os.getenv("IEEE_Bot")
-
-import datetime
 import os.path
-from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-
-# If modifying these scopes, delete the file token.json.
-SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+import GoogleCalendar as gc
 
 
 def main():
-    """Shows basic usage of the Google Calendar API.
-    Prints the start and name of the next 10 events on the user's calendar.
-    """
-    creds = None
-    # The file token.json stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-    # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file('Quickstart/credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
+    load_dotenv()
+    TOKEN = os.getenv('BOT_TOKEN')
+    GUILD = os.getenv('DISCORD_GUILD')
+    # intents = discord.Intents.all()
+    bot = commands.Bot(command_prefix='!', intents=None)
 
-    service = build('calendar', 'v3', credentials=creds)
+    service = gc.access_google_calendar()
 
-    # Call the Calendar API
-    today = datetime.datetime.today()
-    week_from_now = today + relativedelta(days=6, hours=23, minutes=59, seconds=59)
-    tmin = week_from_now.isoformat('T') + 'Z'
-    tmax = today.isoformat('T') + 'Z'
+    @bot.event
+    async def on_ready():
+        """
+        :return:
+        """
+        print(f"{bot.user.name} has connected to Discord!")
 
-    json_file_name = tmin[:tmin.index('T')]
+    @bot.command(name='Hello', help=f'Responds with a greeting from this bot')
+    async def greeting(ctx):
+        """
+        :param ctx:
+        :return:
+        """
+        await ctx.send(f"Hello, {ctx.message.author.mention}\nMy name is {bot.user.name}!")
 
-    events_result = service.events().list(
-        calendarId='primary',
-        timeMin=tmin,
-        timeMax=tmax,
-        singleEvents=True,
-        orderBy='startTime').execute()
+    @bot.event
+    async def process_weekly_schedule(ctx, given_name='general'):
+        channel = discord.utils.get(ctx.guild.channels, name=given_name)
+        file_name = gc.process_weekly_events(service)
+        os.chdir("./json_weekly_files")
+        text = None
+        with open(file_name, 'r') as f:
+            text = f.read()
+            f.close()
+            os.chdir('..')
+        await channel.send(text)
 
-    events = events_result.get('items', [])
 
-    os.chdir("./json_weekly_files")
-    with open(f"{json_file_name}.json", 'w', encoding='utf-8') as f:
-        event_list = {}
-        for i, event in enumerate(events):
-            event_entry = {"event_name": event['summary'], "start_time": event['start']['dateTime'],
-                           "end_time": event['end']['dateTime'], "location": "void"}
-            event_list[f"Event No.{i+1}"] = event_entry
-        json.dump(event_list, fp=f, indent=4)
+    bot.run(TOKEN)
 
 
 if __name__ == '__main__':
     main()
+
+#TODO: FIGURE OUT HOW TO CONFIGURE TIMED EVENTS FOR BOT EVENTS LIKE PROCESS_WEEKLY_SCHEDULE
