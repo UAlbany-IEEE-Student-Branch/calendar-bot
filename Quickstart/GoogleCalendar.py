@@ -11,6 +11,8 @@ import json
 
 
 def access_google_calendar() -> object:
+    """This function is used to access the Google Calendar API and returns an object that is used to interact
+    with said API"""
     # If modifying these scopes, delete the file token.json.
     SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
@@ -37,9 +39,19 @@ def access_google_calendar() -> object:
     return build('calendar', 'v3', credentials=creds)
 
 
-def process_weekly_events(service: object) -> str:
+def process_time_string(time: str) -> str:
+    """This is a helper function for process_weekly_events() that takes the default military time and returns the
+    AM/PM time formatted correctly"""
+    military_time = int(time[:time.index(':')])
+    time_ending = "PM" if military_time >= 12 else "AM"
+    regular_time = (military_time % 12) if military_time != 12 else 12
+    return f"{regular_time}{time[time.index(':'):]} {time_ending}"
 
-    # Call the Calendar API
+
+def process_weekly_events(service: object) -> str:
+    """This function calls access_google_calendar() and uses the permission to interact with the google calendar API
+    in order to generate a .json file with the weekly events scheduled for the UAlbany IEEE; the function also returns
+    the name of the file generated"""
     today = datetime.datetime.today()
     week_from_now = today + relativedelta(days=12, hours=23, minutes=59, seconds=59)
     tmax = week_from_now.isoformat('T') + 'Z'
@@ -50,7 +62,7 @@ def process_weekly_events(service: object) -> str:
     events_result = service.events().list(
         calendarId='primary',
         timeMin=tmin,
-        timeMax=None,
+        timeMax=tmax,
         singleEvents=True,
         orderBy='startTime').execute()
 
@@ -61,11 +73,18 @@ def process_weekly_events(service: object) -> str:
         with open(f"{json_file_name}.json", 'w', encoding='utf-8') as f:
             event_list = {}
             for i, event in enumerate(events):
-                event_entry = {"event_name": event['summary'], "start_time": event['start']['dateTime'],
-                               "end_time": event['end']['dateTime'], "location": "void"}
+                start_time = event['start']['dateTime']
+                start_time = start_time[start_time.index('T') + 1: start_time.index('T') + 6]
+                end_time = event['end']['dateTime']
+                end_time = end_time[end_time.index('T') + 1: end_time.index('T') + 6]
+                print(event)
+                event_entry = {"event_name": event['summary'], "description": event['description'],
+                               "start_time": process_time_string(start_time), "end_time": process_time_string(end_time),
+                               "location": "void"}
                 event_list[f"Event No.{i+1}"] = event_entry
             json.dump(event_list, fp=f, indent=4)
-    f.close()
-    os.chdir("..")
-
+        f.close()
+        os.chdir("..")
+    else:
+        return None
     return f"{json_file_name}.json"
