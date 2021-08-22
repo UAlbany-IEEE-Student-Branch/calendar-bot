@@ -1,14 +1,15 @@
-import json
-
+import time
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands.bot import Bot
 from dotenv import load_dotenv
 import os.path
+import json
 import GoogleCalendar as gc
 
 
 def main():
+    """Main method used for bot life cycle, may change later since the structure could be better"""
     load_dotenv()
     TOKEN = os.getenv('BOT_TOKEN')
     GUILD = os.getenv('DISCORD_GUILD')
@@ -17,9 +18,30 @@ def main():
 
     service = gc.access_google_calendar()
 
-    @bot.command(name='test')
-    async def process_weekly_schedule(ctx, given_name='bot-spam'):
-        channel = discord.utils.get(ctx.guild.channels, name=given_name)
+    class TaskManager(commands.Cog):
+        """Inner-class TaskManager which used a Cog to carry out scheduled tasks behind the scenes"""
+        def __init__(self):
+            self.time_check.start()
+
+        @tasks.loop(seconds=1.0)
+        async def time_check(self):
+            current_time = time.localtime()
+            if current_time.tm_wday == 6 and current_time.tm_hour == 0 and current_time.tm_min == 0 \
+                    and current_time.tm_sec == 0:
+                await process_weekly_schedule()
+
+
+    task_manager = TaskManager()  # Making an instance of the Cog class TaskManager
+
+
+    @bot.event
+    async def process_weekly_schedule(given_name='bot-spam'):
+        """Bot event that is called via the TaskManager instance, interacts with the google calendar API, processes
+        a .json file with the week's events, reads from the generated file and posts the weekly schedule in general
+        text channel"""
+        channel = discord.utils.get(bot.get_all_channels(), name=given_name)
+        # all_channels = bot.get_all_channels()
+        # channel = filter(lambda x: x == 'bot-spam', all_channels)
         file_name = gc.process_weekly_events(service)
         if file_name:
             os.chdir("./json_weekly_files")
@@ -36,7 +58,7 @@ def main():
                     if 0 <= i < len(data) - 1:
                         text += '\n'
                 f.close()
-            await channel.send(f"```{text}```")
+            await channel.send(f"```{text}```", )
         else:
             print("There seems to have been no schedule for this coming week. Disregard if this is not a problem, "
                   "otherwise please attend to the schedule.")
@@ -48,5 +70,5 @@ def main():
 if __name__ == '__main__':
     main()
 
-#TODO: FIGURE OUT HOW TO CONFIGURE TIMED EVENTS FOR BOT EVENTS LIKE PROCESS_WEEKLY_SCHEDULE
 #TODO: FIGURE OUT A GOOD WAY TO PARSE AND HANDLE THE HTML LINK HREF IN THE DESCRIPTION
+#TODO: ORGANIZE THIS SHIT A LOT MORE, LOOKS AWFUL RIGHT NOW

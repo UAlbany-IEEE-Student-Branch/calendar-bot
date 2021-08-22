@@ -77,7 +77,6 @@ def process_weekly_events(service: object) -> str:
                 start_time = start_time[start_time.index('T') + 1: start_time.index('T') + 6]
                 end_time = event['end']['dateTime']
                 end_time = end_time[end_time.index('T') + 1: end_time.index('T') + 6]
-                print(event)
                 event_entry = {"event_name": event['summary'], "description": event['description'],
                                "start_time": process_time_string(start_time), "end_time": process_time_string(end_time),
                                "location": "void"}
