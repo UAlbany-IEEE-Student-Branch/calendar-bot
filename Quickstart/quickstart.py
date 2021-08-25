@@ -62,6 +62,7 @@ def main():
         else:
             print("There seems to have been no schedule for this coming week. Disregard if this is not a problem, "
                   "otherwise please attend to the schedule.")
+            await channel.send('null')
 
 
     bot.run(TOKEN)
