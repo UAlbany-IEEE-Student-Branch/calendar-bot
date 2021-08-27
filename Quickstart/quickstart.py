@@ -1,4 +1,6 @@
+import asyncio
 import time
+import schedule
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands.bot import Bot
@@ -17,22 +19,15 @@ def main():
     bot = commands.Bot(command_prefix='!', intents=None)
 
     service = gc.access_google_calendar()
+    print(service)
 
-    class TaskManager(commands.Cog):
-        """Inner-class TaskManager which used a Cog to carry out scheduled tasks behind the scenes"""
-        def __init__(self):
-            self.time_check.start()
-
-        @tasks.loop(seconds=1.0)
-        async def time_check(self):
-            current_time = time.localtime()
-            if current_time.tm_wday == 6 and current_time.tm_hour == 0 and current_time.tm_min == 0 \
-                    and current_time.tm_sec == 0:
-                await process_weekly_schedule()
-
-
-    task_manager = TaskManager()  # Making an instance of the Cog class TaskManager
-
+    @bot.command(name='Hello', help=f'Responds with a greeting from this bot')
+    async def greeting(ctx):
+        """
+        :param ctx:
+        :return:
+        """
+        await ctx.send(f"Hello!")
 
     @bot.event
     async def process_weekly_schedule(given_name='bot-spam'):
@@ -40,6 +35,7 @@ def main():
         a .json file with the week's events, reads from the generated file and posts the weekly schedule in general
         text channel"""
         channel = discord.utils.get(bot.get_all_channels(), name=given_name)
+        print(bot.get_all_channels())
         # all_channels = bot.get_all_channels()
         # channel = filter(lambda x: x == 'bot-spam', all_channels)
         file_name = gc.process_weekly_events(service)
@@ -58,11 +54,17 @@ def main():
                     if 0 <= i < len(data) - 1:
                         text += '\n'
                 f.close()
-            await channel.send(f"```{text}```", )
-        else:
-            print("There seems to have been no schedule for this coming week. Disregard if this is not a problem, "
-                  "otherwise please attend to the schedule.")
-            await channel.send('null')
+            await channel.send(f"```{text}```")
+
+    # def foo():
+    #     asyncio.run(process_weekly_schedule())
+    #
+    #
+    # schedule.every(5).seconds.do(foo)
+    #
+    # while True:
+    #     schedule.run_pending()
+    #     time.sleep(1)
 
 
     bot.run(TOKEN)

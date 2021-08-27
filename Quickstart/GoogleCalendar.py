@@ -53,7 +53,7 @@ def process_weekly_events(service: object) -> str:
     in order to generate a .json file with the weekly events scheduled for the UAlbany IEEE; the function also returns
     the name of the file generated"""
     today = datetime.datetime.today()
-    week_from_now = today + relativedelta(days=12, hours=23, minutes=59, seconds=59)
+    week_from_now = today + relativedelta(days=6, hours=23, minutes=59, seconds=59)
     tmax = week_from_now.isoformat('T') + 'Z'
     tmin = today.isoformat('T') + 'Z'
 
