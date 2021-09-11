@@ -2,12 +2,9 @@ import asyncio
 import time
 import discord
 from discord.ext import commands, tasks
-from discord.ext.commands.bot import Bot
 from dotenv import load_dotenv
 import os.path
 import json
-import sched
-from dateutil import parser
 from datetime import datetime
 import GoogleCalendar as gc
 
@@ -74,7 +71,7 @@ def bot():
         await channel.send(f"{text}")
 
 
-    @tasks.loop(seconds=10)  # This can serve to be promising, think about using this
+    @tasks.loop(hours=168)  # This can serve to be promising, think about using this
     async def my_task(channel_name='bot-spam'):
         """This function schedules the posting of the general schedule and the reminders for IEEE events; loops
         every week at the same time"""
