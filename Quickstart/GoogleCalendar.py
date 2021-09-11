@@ -1,4 +1,8 @@
 from __future__ import print_function
+
+import time
+import dateutil
+
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -16,9 +20,6 @@ def access_google_calendar() -> object:
     # If modifying these scopes, delete the file token.json.
     SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
-    """Shows basic usage of the Google Calendar API.
-    Prints the start and name of the next 10 events on the user's calendar.
-    """
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -72,18 +73,28 @@ def process_weekly_events(service: object) -> str:
         os.chdir("./json_weekly_files")
         with open(f"{json_file_name}.json", 'w', encoding='utf-8') as f:
             event_list = {}
+            time_format = "%U:%w:%H:%M:%S"
+            clock_time_format = "%H:%M"
             for i, event in enumerate(events):
-                start_time = event['start']['dateTime']
-                start_time = start_time[start_time.index('T') + 1: start_time.index('T') + 6]
-                end_time = event['end']['dateTime']
-                end_time = end_time[end_time.index('T') + 1: end_time.index('T') + 6]
-                event_entry = {"event_name": event['summary'], "description": event['description'],
-                               "start_time": process_time_string(start_time), "end_time": process_time_string(end_time),
-                               "location": "void"}
+                start_time = dateutil.parser.parse(event['start']['dateTime'])
+                start_time_listable = start_time.strftime(clock_time_format)
+                # start_time = start_time[start_time.index('T') + 1: start_time.index('T') + 6]
+                end_time = dateutil.parser.parse(event['end']['dateTime'])
+                end_time_listable = end_time.strftime(clock_time_format)
+                start_time_parsable = start_time.strftime(time_format)
+                start_time_listable, end_time_listable, start_time_parsable = \
+                    str(start_time_listable), str(end_time_listable), str(start_time_parsable)
+                # end_time = end_time[end_time.index('T') + 1: end_time.index('T') + 6]
+                # event_entry = {"event_name": event['summary'], "description": event['description'],
+                #                "start_time": process_time_string(start_time), "end_time": process_time_string(end_time),
+                #                "location": "void"}
+                event_entry = {"event_name": 'void', "description": 'void',
+                               "start_time": start_time_listable, "end_time": end_time_listable,
+                               "location": "void", "start_time_parsable": start_time_parsable}
                 event_list[f"Event No.{i+1}"] = event_entry
             json.dump(event_list, fp=f, indent=4)
         f.close()
         os.chdir("..")
     else:
         return None
-    return f"{json_file_name}.json"
+    return f"./json_weekly_files/{json_file_name}.json"
