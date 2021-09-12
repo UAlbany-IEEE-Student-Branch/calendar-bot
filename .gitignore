@@ -3,5 +3,5 @@
 Bot/token.json
 Bot/credentials.json
 .idea
-Bot/json_weekly_files/*
+Bot/json_weekly_files/*.json
 ** __pycache__
