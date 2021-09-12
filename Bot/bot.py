@@ -87,7 +87,7 @@ def bot():
                 time_format = "%U:%w:%H:%M:%S"
                 seconds_before = 10 * 60
                 for i, event in enumerate(data):
-                    start_time = data[f'Event No.{i+1}']['start_time_parsable']
+                    start_time = data[f'Event No.{i+1}']['start_time_parse']
                     now = datetime.strftime(datetime.now(), time_format)
                     diff = (datetime.strptime(start_time, time_format) -
                             datetime.strptime(now, time_format)).total_seconds()
@@ -113,23 +113,3 @@ def bot():
 
 
 bot()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# # TODO: FIGURE OUT A GOOD WAY TO PARSE AND HANDLE THE HTML LINK HREF IN THE DESCRIPTION
-# # TODO: ORGANIZE THIS SHIT A LOT MORE, LOOKS AWFUL RIGHT NOW
-

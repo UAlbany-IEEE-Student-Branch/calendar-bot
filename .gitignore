@@ -1,5 +1,6 @@
 .env
 .json
-Quickstart/token.json
-Quickstart/credentials.json
+Bot/token.json
+Bot/credentials.json
 .idea
+Bot/json_weekly_files/*

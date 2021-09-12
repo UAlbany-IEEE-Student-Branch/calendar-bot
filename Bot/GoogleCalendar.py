@@ -1,14 +1,13 @@
 from __future__ import print_function
-
-import dateutil
-
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+
 import datetime
 import os
 import os.path
+import dateutil.parser
 from dateutil.relativedelta import relativedelta
 import json
 
@@ -39,15 +38,6 @@ def access_google_calendar() -> object:
     return build('calendar', 'v3', credentials=creds)
 
 
-def process_time_string(time: str) -> str:
-    """This is a helper function for process_weekly_events() that takes the default military time and returns the
-    AM/PM time formatted correctly"""
-    military_time = int(time[:time.index(':')])
-    time_ending = "PM" if military_time >= 12 else "AM"
-    regular_time = (military_time % 12) if military_time != 12 else 12
-    return f"{regular_time}{time[time.index(':'):]} {time_ending}"
-
-
 def process_weekly_events(service: object) -> str:
     """This function calls access_google_calendar() and uses the permission to interact with the google calendar API
     in order to generate a .json file with the weekly events scheduled for the UAlbany IEEE; the function also returns
@@ -73,23 +63,22 @@ def process_weekly_events(service: object) -> str:
         with open(f"{json_file_name}.json", 'w', encoding='utf-8') as f:
             event_list = {}
             time_format = "%U:%w:%H:%M:%S"
-            clock_time_format = "%H:%M"
+            clock_time_format = "%I:%M %p"
             for i, event in enumerate(events):
                 start_time = dateutil.parser.parse(event['start']['dateTime'])
                 start_time_listable = start_time.strftime(clock_time_format)
-                # start_time = start_time[start_time.index('T') + 1: start_time.index('T') + 6]
                 end_time = dateutil.parser.parse(event['end']['dateTime'])
                 end_time_listable = end_time.strftime(clock_time_format)
-                start_time_parsable = start_time.strftime(time_format)
-                start_time_listable, end_time_listable, start_time_parsable = \
-                    str(start_time_listable), str(end_time_listable), str(start_time_parsable)
-                # end_time = end_time[end_time.index('T') + 1: end_time.index('T') + 6]
-                # event_entry = {"event_name": event['summary'], "description": event['description'],
-                #                "start_time": process_time_string(start_time), "end_time": process_time_string(end_time),
-                #                "location": "void"}
-                event_entry = {"event_name": 'void', "description": 'void',
+                start_time_parse = start_time.strftime(time_format)
+                start_time_listable, end_time_listable, start_time_parse = \
+                    str(start_time_listable), str(end_time_listable), str(start_time_parse)
+
+                event_entry = {"event_name": None if not event.get('summary') else event['summary'],
+                               "description": None if not event.get('description') else event['description'],
                                "start_time": start_time_listable, "end_time": end_time_listable,
-                               "location": "void", "start_time_parsable": start_time_parsable}
+                               "location": None if not event.get('location') else event['location'],
+                               "start_time_parse": start_time_parse}
+
                 event_list[f"Event No.{i+1}"] = event_entry
             json.dump(event_list, fp=f, indent=4)
         f.close()
