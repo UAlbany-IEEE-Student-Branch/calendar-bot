@@ -42,13 +42,14 @@ def bot():
         with open(file_path, 'r') as f:
             text = "UALBANY IEEE WEEKLY SCHEDULE:\n\n"
             data = json.load(f)
-            for i in range(len(data)):
-                text += "Event: " + data[f"Event No.{i + 1}"]['event_name'] + '\n' + "Summary: " + \
-                        data[f"Event No.{i + 1}"]['description'] + '\n' + "Start time: " + \
-                        data[f"Event No.{i + 1}"]['start_time'] + '\n' + "End time: " + \
-                        data[f"Event No.{i + 1}"]['end_time'] + '\n' + "Location: " + \
-                        data[f"Event No.{i + 1}"]['location'] + '\n'
-                if 0 <= i < len(data) - 1:
+            for i in range(1, len(data) + 1):
+                print(data)
+                text += "Event: " + str(data[f"Event No.{i}"]['event_name']) + '\n' + "Summary: " +\
+                        str(data[f"Event No.{i}"]['description']) + '\n' + "Start time: " + \
+                        str(data[f"Event No.{i}"]['start_time']) + '\n' + "End time: " + \
+                        str(data[f"Event No.{i}"]['end_time']) + '\n' + "Location: " + \
+                        str(data[f"Event No.{i}"]['location']) + '\n'
+                if 1 <= i < len(data):
                     text += '\n'
             f.close()
 
@@ -72,7 +73,7 @@ def bot():
 
 
     @tasks.loop(hours=168)  # This can serve to be promising, think about using this
-    async def my_task(channel_name='bot-spam'):
+    async def check_weekly_schedule(channel_name='bot-spam'):
         """This function schedules the posting of the general schedule and the reminders for IEEE events; loops
         every week at the same time"""
         channels = bot.get_all_channels()
@@ -95,8 +96,8 @@ def bot():
                     await post_reminder(file_path, i + 1, channel)
 
 
-    @my_task.before_loop
-    async def before_my_task():
+    @check_weekly_schedule.before_loop
+    async def before_check_weekly_schedule():
         """Kind of like a preprocessing function to do before the loop"""
         time_format = "%U:%w:%H:%M:%S"
         week_num = time.strftime('%U')
@@ -104,12 +105,33 @@ def bot():
         now = datetime.strftime(datetime.now(), time_format)
         diff = (datetime.strptime(f'{int(week_num) + 1}:0:00:00:00', time_format) -
                 datetime.strptime(now, time_format)).total_seconds()
+        # diff = 3
         await asyncio.sleep(diff)
 
-    my_task.start()
+    # @tasks.loop(seconds=5)  # This can serve to be promising, think about using this
+    # async def dummy(channel_name='bot-spam'):
+    #     channels = bot.get_all_channels()
+    #     channel = None
+    #     for i in channels:
+    #         channel = i if i.name == channel_name else channel
+    #     await channel.send("dummy process")
+    #
+    #
+    # @dummy.before_loop
+    # async def before_dummy():
+    #     diff = 3
+    #     await asyncio.sleep(diff)
+
+    check_weekly_schedule.start()
+    # dummy.start()
 
 
     bot.run(TOKEN)
 
 
 bot()
+
+#TODO: Test the bot once more using the standard process of saving the weekly schedule to a local directory. If it fails,
+# consider using mongoDB
+#TODO: Create a task that dynamically refreshes the auth token once it expires, use dummy task as a template
+#TODO: Research more on how the HTML parser for python works, link here: https://docs.python.org/3/library/html.parser.html
