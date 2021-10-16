@@ -43,7 +43,7 @@ def bot():
             text = "UALBANY IEEE WEEKLY SCHEDULE:\n\n"
             data = json.load(f)
             for i in range(1, len(data) + 1):
-                print(data)
+                # print(data)
                 text += "Event: " + str(data[f"Event No.{i}"]['event_name']) + '\n' + "Summary: " +\
                         str(data[f"Event No.{i}"]['description']) + '\n' + "Start time: " + \
                         str(data[f"Event No.{i}"]['start_time']) + '\n' + "End time: " + \
@@ -72,7 +72,7 @@ def bot():
         await channel.send(f"{text}")
 
 
-    @tasks.loop(hours=168)  # This can serve to be promising, think about using this
+    @tasks.loop(seconds=10)  # This can serve to be promising, think about using this
     async def check_weekly_schedule(channel_name='bot-spam'):
         """This function schedules the posting of the general schedule and the reminders for IEEE events; loops
         every week at the same time"""
@@ -80,6 +80,7 @@ def bot():
         channel = None
         for i in channels:
             channel = i if i.name == channel_name else channel
+        os.remove("token.json")  # Deletes the auth token so that a new one will be generated
         file_path = await process_weekly_schedule()
         if file_path:
             await post_weekly_schedule(file_path, channel)
@@ -105,7 +106,7 @@ def bot():
         now = datetime.strftime(datetime.now(), time_format)
         diff = (datetime.strptime(f'{int(week_num) + 1}:0:00:00:00', time_format) -
                 datetime.strptime(now, time_format)).total_seconds()
-        # diff = 3
+        diff = 3
         await asyncio.sleep(diff)
 
     # @tasks.loop(seconds=5)  # This can serve to be promising, think about using this
