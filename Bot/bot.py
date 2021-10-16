@@ -80,7 +80,6 @@ def bot():
         channel = None
         for i in channels:
             channel = i if i.name == channel_name else channel
-        os.remove("token.json")  # Deletes the auth token so that a new one will be generated
         file_path = await process_weekly_schedule()
         if file_path:
             await post_weekly_schedule(file_path, channel)
@@ -106,7 +105,7 @@ def bot():
         now = datetime.strftime(datetime.now(), time_format)
         diff = (datetime.strptime(f'{int(week_num) + 1}:0:00:00:00', time_format) -
                 datetime.strptime(now, time_format)).total_seconds()
-        diff = 3
+        # diff = 5
         await asyncio.sleep(diff)
 
     # @tasks.loop(seconds=5)  # This can serve to be promising, think about using this
@@ -132,7 +131,10 @@ def bot():
 
 bot()
 
-#TODO: Test the bot once more using the standard process of saving the weekly schedule to a local directory. If it fails,
-# consider using mongoDB
-#TODO: Create a task that dynamically refreshes the auth token once it expires, use dummy task as a template
-#TODO: Research more on how the HTML parser for python works, link here: https://docs.python.org/3/library/html.parser.html
+# TODO: Test the bot once more using the standard process of saving the weekly schedule to a local directory. If it
+#  fails, consider using mongoDB
+
+# TODO: Create a task that dynamically refreshes the auth token once it expires, use dummy task as a template
+
+# TODO: Figure out how to dynamically receive access tokens via refreshing with repeated user consent, or find another
+#  mode of getting access
