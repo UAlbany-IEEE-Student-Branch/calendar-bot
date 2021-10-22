@@ -45,7 +45,8 @@ def bot():
             for i in range(1, len(data) + 1):
                 # print(data)
                 text += "Event: " + str(data[f"Event No.{i}"]['event_name']) + '\n' + "Summary: " +\
-                        str(data[f"Event No.{i}"]['description']) + '\n' + "Start time: " + \
+                        str(data[f"Event No.{i}"]['description']) + '\n' + "Date: " + \
+                        str(data[f"Event No.{i}"]['date']) + '\n' + "Start time: " + \
                         str(data[f"Event No.{i}"]['start_time']) + '\n' + "End time: " + \
                         str(data[f"Event No.{i}"]['end_time']) + '\n' + "Location: " + \
                         str(data[f"Event No.{i}"]['location']) + '\n'
@@ -105,7 +106,7 @@ def bot():
         now = datetime.strftime(datetime.now(), time_format)
         diff = (datetime.strptime(f'{int(week_num) + 1}:0:00:00:00', time_format) -
                 datetime.strptime(now, time_format)).total_seconds()
-        # diff = 5
+        diff = 5
         await asyncio.sleep(diff)
 
     # @tasks.loop(seconds=5)  # This can serve to be promising, think about using this
