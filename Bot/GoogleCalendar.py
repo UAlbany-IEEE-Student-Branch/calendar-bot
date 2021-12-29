@@ -92,6 +92,5 @@ def create_weekly_json(json_file_name: str, events: object) -> str:
 
             event_list[f"Event No.{i + 1}"] = event_entry
         json.dump(event_list, fp=f, indent=4)
-    f.close()
     os.chdir("..")
     return f"./json_weekly_files/{json_file_name}.json"

@@ -24,14 +24,17 @@ def bot():
     intents = discord.Intents.all()
     bot = commands.Bot(command_prefix='!', intents=None)
 
+
     @bot.event
     async def on_ready():
         """Prints message to the console when bot connects to discord"""
         print(f"{bot.user.name} has connected to Discord!")
 
+
     @bot.command(name=f'Hello', help='Responds with a greeting from Calendar-bot')
     async def greeting(ctx):
         await ctx.send(f"Hello, {ctx.message.author.mention}\nMy name is {bot.user.name}!")
+
 
     async def post_weekly_schedule(file_path: str, channel):
         """Posts weekly schedule for IEEE at sunday at 12 AM each week"""
@@ -52,7 +55,6 @@ def bot():
                         str(data[f"Event No.{i}"]['location']) + '\n'
                 if 1 <= i < len(data):
                     text += '\n'
-            f.close()
 
         await channel.send(f"```{text}```")
 
@@ -73,7 +75,7 @@ def bot():
         await channel.send(f"{text}")
 
 
-    @tasks.loop(seconds=10)  # This can serve to be promising, think about using this
+    @tasks.loop(seconds=10) # TODO: Make sure to change the seconds variable here
     async def check_weekly_schedule(channel_name='bot-spam'):
         """This function schedules the posting of the general schedule and the reminders for IEEE events; loops
         every week at the same time"""
