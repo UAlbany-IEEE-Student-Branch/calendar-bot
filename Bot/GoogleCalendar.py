@@ -10,8 +10,19 @@ import os.path
 import dateutil.parser
 from dateutil.relativedelta import relativedelta
 import json
-
 import MLStripper as Ml
+
+def refresh_token():
+    """This function is used to make a request to the google calendar API to refresh the access token"""
+    SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+    creds = None
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        creds.refresh(Request())
+        with open('token.json', 'w') as token:
+            token.write(creds.to_json())
+    else:
+        raise FileNotFoundError("token.json file not present")
 
 
 def access_google_calendar() -> object:

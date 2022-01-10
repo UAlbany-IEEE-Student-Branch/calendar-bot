@@ -6,12 +6,17 @@ from dotenv import load_dotenv
 import os.path
 import json
 from datetime import datetime
+import dateutil.parser as parser
 import GoogleCalendar as gc
 
 
 async def process_weekly_schedule():
     """This function is used to access google calendar, process events for the week and return the file path"""
-    service = gc.access_google_calendar()
+    try:
+        service = gc.access_google_calendar()
+    except Exception:
+        print(Exception.__cause__)
+        exit(1)
     file_path = gc.process_weekly_events(service)
     return file_path
 
@@ -85,6 +90,7 @@ def bot():
             channel = i if i.name == channel_name else channel
         file_path = await process_weekly_schedule()
         if file_path:
+            refresh_access_token.start() # This will be used to automatically refresh token
             await post_weekly_schedule(file_path, channel)
             with open(file_path, 'r') as f:
                 data = json.load(f)
@@ -111,22 +117,24 @@ def bot():
         diff = 5
         await asyncio.sleep(diff)
 
-    # @tasks.loop(seconds=5)  # This can serve to be promising, think about using this
-    # async def dummy(channel_name='bot-spam'):
-    #     channels = bot.get_all_channels()
-    #     channel = None
-    #     for i in channels:
-    #         channel = i if i.name == channel_name else channel
-    #     await channel.send("dummy process")
-    #
-    #
-    # @dummy.before_loop
-    # async def before_dummy():
-    #     diff = 3
-    #     await asyncio.sleep(diff)
+    @tasks.loop(seconds=1) 
+    async def refresh_access_token():
+        """This function serves to refresh access 10 seconds before it is set to expire"""
+        time_format = "%m/%d/%Y, %H:%M:%S"
+        seconds_before_expiry = 10
+        with open("token.json") as f:
+            data = json.load(f)
+            expiry = data['expiry']
+            time_of_expiry = (parser.parse(expiry)).strftime(time_format)
+            time_of_expiry = datetime.strptime(time_of_expiry, time_format)
+            now = (datetime.now()).strftime(time_format)
+            now = datetime.strptime(now, time_format)
+            time_unitl_expiry = (time_of_expiry - now).total_seconds()
+            await asyncio.sleep(time_unitl_expiry - seconds_before_expiry)
+            gc.refresh_token()
+
 
     check_weekly_schedule.start()
-    # dummy.start()
 
 
     bot.run(TOKEN)
