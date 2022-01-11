@@ -14,13 +14,12 @@ async def process_weekly_schedule():
     """This function is used to access google calendar, process events for the week and return the file path"""
     try:
         service = gc.access_google_calendar()
+        file_path = gc.process_weekly_events(service)
+        return file_path
     except Exception:
-        print(Exception.__cause__)
-        exit(1)
-    file_path = gc.process_weekly_events(service)
-    return file_path
+        return None
 
-
+    
 def bot():
     """This is the main bot loop; runs throughout the bot life cycle"""
     load_dotenv()
@@ -43,15 +42,12 @@ def bot():
 
     async def post_weekly_schedule(file_path: str, channel):
         """Posts weekly schedule for IEEE at sunday at 12 AM each week"""
-
         await bot.wait_until_ready()
-
         text = None
         with open(file_path, 'r') as f:
-            text = "UALBANY IEEE WEEKLY SCHEDULE:\n\n"
+            text = "@everyone\n\n"
             data = json.load(f)
             for i in range(1, len(data) + 1):
-                # print(data)
                 text += "Event: " + str(data[f"Event No.{i}"]['event_name']) + '\n' + "Summary: " +\
                         str(data[f"Event No.{i}"]['description']) + '\n' + "Date: " + \
                         str(data[f"Event No.{i}"]['date']) + '\n' + "Start time: " + \
@@ -60,15 +56,14 @@ def bot():
                         str(data[f"Event No.{i}"]['location']) + '\n'
                 if 1 <= i < len(data):
                     text += '\n'
+            embed = discord.Embed(title="UALBANY IEEE WEEKLY SCHEDULE:", description=text, color=0xFF5733)
+        await channel.send(embed=embed)
 
-        await channel.send(f"```{text}```")
 
 
     async def post_reminder(file_path: str, event_idx: int, channel):
         """Posts reminders for IEEE events in discord"""
-
         await bot.wait_until_ready()
-
         text = None
         with open(file_path, 'r') as f:
             data = json.load(f)
@@ -76,11 +71,10 @@ def bot():
             text = f"@everyone Reminder that we will be hosting {data[f'Event No.{event_idx}']['event_name']} " \
                    f"at {data[f'Event No.{event_idx}']['start_time']}!!!"
             f.close()
-
         await channel.send(f"{text}")
 
 
-    @tasks.loop(seconds=10) # TODO: Make sure to change the seconds variable here
+    @tasks.loop(hours=168) # TODO: Make sure to change the seconds variable here
     async def check_weekly_schedule(channel_name='bot-spam'):
         """This function schedules the posting of the general schedule and the reminders for IEEE events; loops
         every week at the same time"""
@@ -114,10 +108,11 @@ def bot():
         now = datetime.strftime(datetime.now(), time_format)
         diff = (datetime.strptime(f'{int(week_num) + 1}:0:00:00:00', time_format) -
                 datetime.strptime(now, time_format)).total_seconds()
-        diff = 5
+        diff = 10 # REMOVE THIS LINE, ONLY FOR TESTING
         await asyncio.sleep(diff)
 
-    @tasks.loop(seconds=1) 
+
+    @tasks.loop(seconds=1)
     async def refresh_access_token():
         """This function serves to refresh access 10 seconds before it is set to expire"""
         time_format = "%m/%d/%Y, %H:%M:%S"
@@ -141,11 +136,3 @@ def bot():
 
 
 bot()
-
-# TODO: Test the bot once more using the standard process of saving the weekly schedule to a local directory. If it
-#  fails, consider using mongoDB
-
-# TODO: Create a task that dynamically refreshes the auth token once it expires, use dummy task as a template
-
-# TODO: Figure out how to dynamically receive access tokens via refreshing with repeated user consent, or find another
-#  mode of getting access
