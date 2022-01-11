@@ -67,11 +67,10 @@ def bot():
         text = None
         with open(file_path, 'r') as f:
             data = json.load(f)
-            text = "Reminder"
             text = f"@everyone Reminder that we will be hosting {data[f'Event No.{event_idx}']['event_name']} " \
                    f"at {data[f'Event No.{event_idx}']['start_time']}!!!"
-            f.close()
-        await channel.send(f"{text}")
+            embed = discord.Embed(title="Event Reminder", description=text, color=0xFF5733)
+        await channel.send(embed=embed)
 
 
     @tasks.loop(hours=168) # TODO: Make sure to change the seconds variable here
